@@ -1,0 +1,21 @@
+version: "3.7"
+
+services:
+  # product-service
+  product-service:
+    image: product-service
+    build:
+      context: .
+    command: npm run dev
+    restart: always
+    working_dir: /app
+    volumes:
+      - "./:/app"
+      - "/app/node_modules"
+    networks:
+      - kong-net
+
+networks:
+  kong-net:
+    name: kong-net
+    external: true

@@ -1,0 +1,21 @@
+version: "3.7"
+
+services:
+  # user-service
+  user-service:
+    image: user-service
+    build:
+      context: .
+    command: npm run start
+    restart: always
+    working_dir: /app
+    volumes:
+      - "./:/app"
+      - "/app/node_modules"
+    networks:
+      - kong-net
+
+networks:
+  kong-net:
+    name: kong-net
+    external: true
