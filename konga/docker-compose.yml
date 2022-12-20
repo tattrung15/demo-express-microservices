@@ -1,0 +1,62 @@
+version: "3"
+
+networks:
+  kong-net:
+    name: kong-net
+    external: true
+
+services:
+  #######################################
+  # Postgres: The database used by Kong Admin
+  #######################################
+  konga-database:
+    image: postgres:9.6
+    restart: always
+    networks:
+      - kong-net
+    environment:
+      POSTGRES_USER: konga
+      POSTGRES_DB: konga
+      POSTGRES_PASSWORD: konga
+    ports:
+      - "54321:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "konga"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  #######################################
+  # Konga database prepare
+  #######################################
+  konga-prepare:
+    image: pantsel/konga:next
+    command: "-c prepare -a postgres -u postgresql://konga:konga@konga-database:5432/konga"
+    networks:
+      - kong-net
+    restart: on-failure
+    links:
+      - konga-database
+    depends_on:
+      - konga-database
+
+  #######################################
+  # Konga: Kong GUI Admin
+  #######################################
+  konga:
+    image: pantsel/konga:next
+    restart: always
+    networks:
+      - kong-net
+    environment:
+      DB_ADAPTER: postgres
+      DB_HOST: konga-database
+      DB_USER: konga
+      DB_PASSWORD: konga
+      TOKEN_SECRET: ${KONGA_TOKEN_SECRET}
+      DB_DATABASE: konga
+      NODE_ENV: ${KONGA_ENV}
+    depends_on:
+      - konga-database
+    ports:
+      - "${KONGA_PORT}:${KONGA_PORT}"
